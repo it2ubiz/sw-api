@@ -1,0 +1,158 @@
+Все методы только после авторизации. Токен передается в составе req.headers.authorization. zНа данный момент токен фиксированный 123 (далее будет сделано хранение секретов в редисе)
+
+1. Добавление пользователя\покупателя в разрезе конкретного магазина (отдельная инсталяция для нашего клиента). Хранится в отдельной БД
+
+POST /user/add
+
+request:
+{
+	uid: integer, //Идентификатор пользователя в рамках магазина
+	name: string,
+	mail:string,
+	meta: //Опциональный параметр. метаданные о клиенте, можно передать любые значимые с точки зрения магазина значения. Используется для классификации и кластеризации пользователей
+	[
+		{
+			name: PropertyName, 	// Наименование свойства. Например age\geo-position\gender  и т.д.
+			value: PropertyValue 	// Значение свойства Например 25\USA\male и т.д.
+		},
+		{
+			name: PropertyName, 	// Наименование свойства
+			value: PropertyValue 	// Значение свойства
+		},
+		...
+	]
+}
+
+response:
+{
+	status: "ok"|"error"
+	code:200|500
+	error: "Error description"
+}
+
+2. Добавление продукта в разрезе конкретного магазина (продукт из ассортимента магазина)
+
+POST /product/add
+
+request:
+{
+	pid: integer, //Идентификатор продукта в рамках магазина
+	name: string,
+	price: double,
+	meta: //Опциональный параметр. метаданные о продукте, можно передать любые значимые с точки зрения магазина значения. Используется для классификации и кластеризации продуктов по категориям\группам и свойствам. Крайне желателен к заполнению для формирования качественных рекомендаций
+	[
+		{
+			name: PropertyName, 	// Наименование свойства. Например size\color\type
+			value: PropertyValue 	// Значение свойства. Например M\Red\Jewellery
+		},
+		{
+			name: PropertyName, 	// Наименование свойства
+			value: PropertyValue 	// Значение свойства
+		},
+		...
+	]
+}
+
+response:
+{
+	status: "ok"|"error"
+	code:200|500
+	error: "Error description"
+}
+
+
+3. Добавление транзакции пользователя по товару. Под транзакцией понимается любое действие над товаром: покупка\помещение в корзину\favorites\wish_list\like и т.д.
+
+POST /user/product/add
+
+request:
+{
+	pid : integer, // Идентификатор товара	
+	uid : integer, // Идентификатор пользователя
+	type: integer  // Тип транзакции
+}
+
+Типы транзакций:
+1: Bought the product
+2: Added product to the favorites
+3: Viewed product
+4: Liked product
+5: Added to the cart
+6: Added product to the custom list
+
+response:
+{
+	status: "ok"|"error"
+	code:200|500
+	error: "Error description"
+}
+
+4. Получить список похожих\сопутствующих товаров
+
+GET /product/similar
+
+request:
+{
+	pid: integer,
+	type: integer // Тип подобия (1 - похожий\аналогичный товар, по результатам кластеризации отнесенный к этому же кластеру; 2 -  связанный товар для рекомендации к совместному преобретению
+}
+
+response:
+{
+	code: 200|500
+	type: integer // равно типу из запроса
+	data:[ pid1, pid2, ...],
+	error: "Error description"
+}
+
+
+4. Получить список пользователей со схожими вкусами (коллаборативная фильтрация)
+
+GET /user/similar
+
+request:
+{
+	uid: integer,
+	type: integer // Тип подобия (пока только 1)
+}
+
+response:
+{
+	code: 200|500
+	type: integer // равно типу из запроса
+	data:[ uid1, uid2, ...],
+	error: "Error description"
+}
+
+
+5. Получить рекомендации для пользователя
+
+GET  /user/recomend
+
+request:
+
+request:
+{
+	uid: integer,
+	type: integer // Тип рекомендации (пока 0 - рекомендация к просмотру\покупке. Далее это будет расширятся)
+}
+
+response:
+{
+	code: 200|500
+	type: integer // равно типу из запроса
+	data:[ 
+		{
+			group:integer, // Группа товаров или категория
+			data: [ pid1, pid2, ...]
+		},
+		{
+			group:integer,
+			data: [ pid1, pid2, ...]
+		}
+	]
+	error: "Error description"
+}
+
+
+
